@@ -8,6 +8,7 @@
                         JFrame JLabel JList JMenuBar JOptionPane
                         JPanel JScrollPane JSplitPane JTextArea
                         JTextField JTree KeyStroke SpringLayout JTextPane
+                        JPopupMenu JMenuItem AbstractAction
                         ListSelectionModel
                         UIManager)
            (javax.swing.event TreeSelectionListener
@@ -16,6 +17,7 @@
                              TreePath TreeSelectionModel)
            (java.awt Insets Rectangle Window)
            (java.awt.event AWTEventListener FocusAdapter MouseAdapter
+                           ActionListener
                            WindowAdapter KeyAdapter)
            (java.awt AWTEvent Color Font GridLayout Toolkit)
            (java.net URL)
@@ -67,14 +69,40 @@
 (def embedded (atom false))
   
 (defn make-text-area [wrap]
-  (doto (proxy [JTextPane] []
-          (getScrollableTracksViewportWidth []
-            (if-not wrap
-              (if-let [parent (.getParent this)]
-                (<= (. this getWidth)
-                    (. parent getWidth))
-                false)
-              true)))))
+  (let [text-area (proxy [JTextPane] []
+                    (getScrollableTracksViewportWidth []
+                                                      (if-not wrap
+                                                        (if-let [parent (.getParent this)]
+                                                          (<= (. this getWidth)
+                                                              (. parent getWidth))
+                                                          false)
+                                                        true)))
+        popup (JPopupMenu.)
+        copy-menu (JMenuItem. "copy")
+        cut-menu (JMenuItem. "cut")
+        paste-menu (JMenuItem. "paste")]
+    (doto copy-menu
+      (.addActionListener
+        (proxy [ActionListener] []
+          (actionPerformed [e]
+                           (.copy text-area)))))
+    (doto cut-menu
+      (.addActionListener
+        (proxy [ActionListener] []
+          (actionPerformed [e]
+                            (.cut text-area)))))
+    (doto paste-menu
+      (.addActionListener
+        (proxy [ActionListener] []
+          (actionPerformed [e]
+                            (.paste text-area)))))
+    (doto popup
+      (.add copy-menu "copy")
+      (.add cut-menu "cut")
+      (.add paste-menu "paste"))
+    (doto text-area
+      (.setComponentPopupMenu popup))))
+                
 
 (def get-clooj-version
   (memoize
