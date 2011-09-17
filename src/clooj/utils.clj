@@ -354,7 +354,25 @@
           (undoableEditHappened [this evt] (.addEdit undoMgr (.getEdit evt))))))
     (attach-action-keys text-area
       ["cmd1 Z" #(if (.canUndo undoMgr) (.undo undoMgr))]
-      ["cmd1 shift Z" #(if (.canRedo undoMgr) (.redo undoMgr))])))
+      ["cmd1 shift Z" #(if (.canRedo undoMgr) (.redo undoMgr))])
+    (when-lets [popup (.getComponentPopupMenu text-area)]
+               (let [undo-menu (JMenuItem. "undo")
+                     redo-menu (JMenuItem. "redo")]
+                 (doto undo-menu 
+                   (.addActionListener 
+                     (proxy [ActionListener] []
+                       (actionPerformed [e]
+                                        (if (.canUndo undoMgr)
+                                          (.undo undoMgr))))))
+                 (doto redo-menu 
+                   (.addActionListener 
+                     (proxy [ActionListener] []
+                       (actionPerformed [e]
+                                        (if (.canRedo undoMgr)
+                                          (.redo undoMgr))))))
+                 (doto popup
+                   (.add undo-menu "undo")
+                   (.add redo-menu "redo"))))))
 
 
 ;; file handling
